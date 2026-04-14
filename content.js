@@ -1,10 +1,13 @@
 const HOVER_DELAY_MS = 450;
 const MAX_WORD_LEN = 40;
+const MAX_SELECTION_LEN = 120;
 
 let tooltip = null;
 let hoverTimer = null;
 let lastWord = "";
+let lastSelection = "";
 let enabled = true;
+let lastPointer = { x: 0, y: 0 };
 const cache = new Map();
 
 chrome.storage.sync.get({ hoverTranslateEnabled: true }, ({ hoverTranslateEnabled }) => {
@@ -51,8 +54,84 @@ function hideTooltip() {
   if (tooltip) tooltip.style.display = "none";
 }
 
+function getSelectionText() {
+  const selection = window.getSelection();
+  if (!selection || selection.isCollapsed) return "";
+
+  const text = selection.toString().replace(/\s+/g, " ").trim();
+  if (!text || text.length > MAX_SELECTION_LEN) return "";
+  return text;
+}
+
+function getSelectionPoint() {
+  const selection = window.getSelection();
+  if (!selection || selection.rangeCount === 0) return lastPointer;
+
+  const range = selection.getRangeAt(0);
+  let rect = range.getBoundingClientRect();
+
+  if (!rect.width && !rect.height) {
+    const rects = range.getClientRects();
+    if (rects.length) rect = rects[0];
+  }
+
+  if (!rect.width && !rect.height) {
+    return lastPointer;
+  }
+
+  return {
+    x: rect.right,
+    y: rect.top
+  };
+}
+
+function getRangeFromPoint(x, y) {
+  if (typeof document.caretRangeFromPoint === "function") {
+    return document.caretRangeFromPoint(x, y);
+  }
+
+  if (typeof document.caretPositionFromPoint === "function") {
+    const position = document.caretPositionFromPoint(x, y);
+    if (!position || !position.offsetNode) return null;
+
+    const range = document.createRange();
+    range.setStart(position.offsetNode, position.offset);
+    range.setEnd(position.offsetNode, position.offset);
+    return range;
+  }
+
+  return null;
+}
+
+async function handleSelectionTranslation() {
+  if (!enabled) return;
+
+  const selectedText = getSelectionText();
+  if (!selectedText) {
+    lastSelection = "";
+    return;
+  }
+
+  const point = getSelectionPoint();
+  if (!point) return;
+
+  if (selectedText === lastSelection && tooltip?.style.display === "block") {
+    return;
+  }
+
+  lastSelection = selectedText;
+  showTooltip(`Translating \"${selectedText}\"...`, point.x, point.y);
+
+  try {
+    const translated = await translateText(selectedText);
+    showTooltip(`${selectedText} → ${translated}`, point.x, point.y);
+  } catch {
+    showTooltip(`Failed to translate: ${selectedText}`, point.x, point.y);
+  }
+}
+
 function extractWordAtPoint(x, y) {
-  const range = document.caretRangeFromPoint?.(x, y);
+  const range = getRangeFromPoint(x, y);
   if (!range || !range.startContainer || range.startContainer.nodeType !== Node.TEXT_NODE) {
     return "";
   }
@@ -96,6 +175,9 @@ async function translateText(word) {
 document.addEventListener("mousemove", (e) => {
   if (!enabled) return;
 
+  lastPointer = { x: e.clientX, y: e.clientY };
+  if (getSelectionText()) return;
+
   if (hoverTimer) clearTimeout(hoverTimer);
 
   hoverTimer = setTimeout(async () => {
@@ -120,6 +202,20 @@ document.addEventListener("mousemove", (e) => {
       showTooltip(`Failed to translate: ${word}`, e.clientX, e.clientY);
     }
   }, HOVER_DELAY_MS);
+});
+
+document.addEventListener("mouseup", () => {
+  setTimeout(handleSelectionTranslation, 0);
+});
+
+document.addEventListener("keyup", () => {
+  setTimeout(handleSelectionTranslation, 0);
+});
+
+document.addEventListener("selectionchange", () => {
+  if (!getSelectionText()) {
+    lastSelection = "";
+  }
 });
 
 document.addEventListener("scroll", hideTooltip, true);

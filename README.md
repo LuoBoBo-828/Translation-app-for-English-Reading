@@ -1,19 +1,21 @@
 # HoverTranslate EN→中文 (Chrome Extension)
 
-A lightweight GitHub project starter for **hover-to-translate**: move your mouse over English words on web pages and see a Chinese translation tooltip.
+A lightweight GitHub project starter for **hover-to-translate**: move your mouse over English words or directly select text on web pages to see a Chinese translation tooltip.
 
 ## Features
 
 - Hover over English text to trigger translation
+- Select (drag highlight) English text to translate immediately (no right-click needed)
 - Fast in-memory cache to avoid duplicate requests
 - Small floating tooltip near your cursor
+- Works on Chrome for macOS and Windows
 - Toggle extension on/off via popup
 
 ## Project structure
 
 - `manifest.json` – Extension metadata (Manifest V3)
 - `content.js` – Hover detection, word extraction, translation, tooltip UI
-- `popup.html` – Mini control panel
+- `popup.html` – Styled bilingual control panel (zh-CN)
 - `popup.js` – Persist extension enabled state
 
 ## Quick start
