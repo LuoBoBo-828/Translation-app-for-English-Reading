@@ -1,0 +1,20 @@
+{
+  "manifest_version": 3,
+  "name": "HoverTranslate EN→中文",
+  "version": "0.1.0",
+  "description": "Hover over English words to see Chinese translations.",
+  "permissions": ["storage"],
+  "host_permissions": [
+    "https://api.mymemory.translated.net/*"
+  ],
+  "action": {
+    "default_popup": "popup.html"
+  },
+  "content_scripts": [
+    {
+      "matches": ["<all_urls>"],
+      "js": ["content.js"],
+      "run_at": "document_idle"
+    }
+  ]
+}
