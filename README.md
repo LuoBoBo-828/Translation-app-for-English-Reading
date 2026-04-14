@@ -1,10 +1,11 @@
 # HoverTranslate EN→中文 (Chrome Extension)
 
-A lightweight GitHub project starter for **hover-to-translate**: move your mouse over English words on web pages and see a Chinese translation tooltip.
+A lightweight GitHub project starter for **hover-to-translate**: move your mouse over English words or directly select text on web pages to see a Chinese translation tooltip.
 
 ## Features
 
 - Hover over English text to trigger translation
+- Select (drag highlight) English text to translate immediately (no right-click needed)
 - Fast in-memory cache to avoid duplicate requests
 - Small floating tooltip near your cursor
 - Toggle extension on/off via popup
